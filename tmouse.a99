@@ -6,8 +6,8 @@
 ; CALL LINK("MOUSE0") 
 ; -- Will block until mouse button 1 is pressed. A subsequent
 ;    CALL PEEK(10000,VPOS,HPOS) will read location data.
-;    MKEY will be 255
-;    Shows mouse sprite when active. Hides mouse sprite on return
+;    MKEY will be 255.
+;    Shows mouse sprite when active. Hides mouse sprite on return.
 ;
 ; CALL LINK("MOUSE1")
 ; -- Install an interupt service routine to update the mouse location and
@@ -49,15 +49,131 @@ BMARG	EQU	MAILBOX+8	; Bottom margin - default 192
 MKEY2	EQU	MAILBOX+9	; If 0, button 2 moves mouse to home
 				;   If 255, button 2 sets VHOME like MKEY
 
+; Message code for mouse request
+MOUREQ	BYTE	>20
+V255	BYTE	>FF
+; receive buffer
+MOUBUF  BSS	3
+	EVEN
 
-MOUSE0	nop
-	rt
+SENDMSG	EQU	>4012
+RECVMSG	EQU	>4010
+
+; once discovered, will hold crubase to reduce lookup cost
+CRUBASE	DATA	>0000
+
+MWS	BSS	>20		; MOUSE-WORKSPACE
+MWSR2	EQU	MWS+4
+MWSR3	EQU	MWS+6
+MWSR4	EQU	MWS+8
+
+WORKSV	DATA	0
+
+; TIPI mouse button bits
+MBLEFT	EQU	>01
+MBRIGHT	EQU	>02
+MBMID	EQU	>04
+
+GPLWS	EQU	>83E0
+GPLWSR1	EQU	>83E2
 
 
-MOUSE1	nop
-	rt
+; XB entry points
+MOUSE0	stwp	R10
+	mov	R10,@WORKSV
+	lwpi	MWS
+
+	; Now we are free to mouse around
+
+	MOV	@CRUBASE,@CRUBASE	; do we need to find the crubase?
+	JNE	SKIP1
+	BL	@FINDCRU
+
+SKIP1	BL	@READM
+	BL	@UPDATE
+
+	; restore workspace with all the unmodified return pointers
+	MOV	@WORKSV,@$+8	; this writes WP into next instruction, first param, as though it was literal
+	LWPI	>AAAA
+	RT
+
+
+MOUSE1	NOP
+	RT
 
 
 MCLR	nop
-	rt
+	RT
 
+
+; Utility functions and support data
+
+TIPI
+	BYTE	>04,'T','I','P','I'
+	EVEN
+
+; If TIPI card is available, @CRUBASE will hold TIPI's cru address.
+;   otherwise it will remain 0.
+FINDCRU
+	LI	R12,>1000
+ISDSR	
+	SBO	0
+	LI	R0,>AA00
+	CB	@>4000,R0
+	JNE	NEXTCARD	; no dsr rom header
+	MOV	@>4008,R0
+	JEQ	NEXTCARD	; end of DSR list
+	AI	R0,4		; R0 now points to DSR name
+	LI	R1,TIPI
+	LI	R2,5		; compare 5 bytes of name string
+TEST
+	CB	*R0+,*R1+
+	JNE	NEXTCARD
+	DEC	R2
+	JNE	TEST
+	SBZ	0		; Found TIPI!
+	MOV	R12,@CRUBASE
+	RT
+
+NEXTCARD
+	SBZ	0
+	AI	R12,>0100
+	CI	R12,>2000
+	JEQ	NOTIPI
+	JMP	ISDSR
+	
+NOTIPI
+	CLR	@CRUBASE
+	RT
+ 
+; Read mouse location and status from TIPI
+; Afterwards MOUBUF contains x, y, buttons
+READM	MOV	@CRUBASE,R12	; enable tipi device
+	SBO	0
+
+	MOV	R11,R15
+	LI	R0,>0001	; send message requesting mouse DATA
+	LI	R1,MOUREQ
+	MOV	@SENDMSG,R4
+	BL	*R4
+
+	CLR	R0		; receive mouse data back 
+	LI	R1,MOUBUF	; set buffer location
+	MOV	@RECVMSG,R4
+	BL	*R4
+
+	SBZ	0		; disable tipi device
+	MOV	R15,R11
+	RT
+
+; Update VPOS HPOS and MKEY based on data read from TIPI
+UPDATE	MOV	@MOUBUF,R0
+	SWPB	R0
+	MOV	R0,@VPOS
+	MOVB	@MOUBUF+2,@MKEY
+	JEQ	SKIPU
+	MOVB	@V255,@MKEY
+SKIPU	RT
+
+; End of source
+	END
