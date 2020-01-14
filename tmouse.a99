@@ -1,5 +1,6 @@
 
 	def MOUSE
 
-MOUSE	data >0000
+MOUSE	nop
+	rt
 
