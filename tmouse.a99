@@ -1,6 +1,63 @@
+;
+; TIPI Extended BASIC mouse driver compatible with Mechatronics Mouse interface
+;
+; CALL INIT::CALL LOAD("TIPI.TMOUSE/O")
+; 
+; CALL LINK("MOUSE0") 
+; -- Will block until mouse button 1 is pressed. A subsequent
+;    CALL PEEK(10000,VPOS,HPOS) will read location data.
+;    MKEY will be 255
+;    Shows mouse sprite when active. Hides mouse sprite on return
+;
+; CALL LINK("MOUSE1")
+; -- Install an interupt service routine to update the mouse location and
+;    button status. 
+;    Mouse sprite is activated. Control flow returns to the calling XB
+;    program. Subsequent CALL PEEK(10000,VPOS,HPOS,MKEY) calls will
+;    provide the updated status. 
+;
+; CALL LINK("MCLR")
+; -- Uninstalls the interrupt service routine, and hides the mouse sprite.
+;
+; CALL LOAD(10003,VHOME,HHOME)
+; -- stores the value of VHOME and HHOME in address 10003 and 10004. The
+;    driver will move the pointer to this position if second mouse button
+;    is pressed.
+;
+; CALL LOAD(10005,LEFT,RIGHT,TOP,BOTTOM)
+; -- stores a bounding box to contain the pointer.
+;
 
-	def MOUSE
 
-MOUSE	nop
+	def MOUSE0
+	def MOUSE1
+	def MCLR
+
+
+MAILBOX	EQU	>2710
+VPOS	EQU	MAILBOX		; Vertical position of pointer
+HPOS	EQU	MAILBOX+1	; Horizontal position of pointer
+MKEY	EQU	MAILBOX+2	; 255 if mouse 1 pressed, 0 if not
+VHOME	EQU	MAILBOX+3	; Vertical home of pointer
+HHOME	EQU	MAILBOX+4	; Horizontal home of pointer
+LMARG	EQU	MAILBOX+5	; Left margin - default 0
+RMARG	EQU	MAILBOX+6	; Right margin - default 255
+TMARG	EQU	MAILBOX+7	; Top margin - default 0
+BMARG	EQU	MAILBOX+8	; Bottom margin - default 192
+
+; Not compatible with Mechatronics driver
+MKEY2	EQU	MAILBOX+9	; If 0, button 2 moves mouse to home
+				;   If 255, button 2 sets VHOME like MKEY
+
+
+MOUSE0	nop
+	rt
+
+
+MOUSE1	nop
+	rt
+
+
+MCLR	nop
 	rt
 
