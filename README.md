@@ -30,7 +30,20 @@ CALL LOAD(10003,VHOME,HHOME)
 CALL LOAD(10005,LEFT,RIGHT,TOP,BOTTOM)
 - stores a bounding box to contain the pointer.
 
-##
+## Notes
 
 You should use CALL LOAD to set VHOME, HHOME, LEFT, RIGHT, TOP and BOTTOM
 limits before using CALL LINK to execute the routines. 
+
+## Building
+
+With xdt99 suite on your path:
+
+```
+make clean
+make
+```
+
+This will produce a tmouse.o file in TIFILES format. It is a DIS/FIX 80, 
+non-compressed, relocatable object file that can be loaded in XB or other
+compatible BASICs for the TI-99/4A.
