@@ -38,16 +38,12 @@ MAILBOX	EQU	>2710
 VPOS	EQU	MAILBOX		; Vertical position of pointer
 HPOS	EQU	MAILBOX+1	; Horizontal position of pointer
 MKEY	EQU	MAILBOX+2	; 255 if mouse 1 pressed, 0 if not
-VHOME	EQU	MAILBOX+3	; Vertical home of pointer
-HHOME	EQU	MAILBOX+4	; Horizontal home of pointer
+VHOME	EQU	MAILBOX+3	; Vertical home for pointer (right mouse button action)
+HHOME	EQU	MAILBOX+4	; Horizontal home for pointer (right mouse button action)
 LMARG	EQU	MAILBOX+5	; Left margin - default 0
 RMARG	EQU	MAILBOX+6	; Right margin - default 255
 TMARG	EQU	MAILBOX+7	; Top margin - default 0
 BMARG	EQU	MAILBOX+8	; Bottom margin - default 192
-
-; Not compatible with Mechatronics driver
-MKEY2	EQU	MAILBOX+9	; If 0, button 2 moves mouse to home
-				;   If 255, button 2 sets VHOME like MKEY
 
 ; Message code for mouse request
 MOUREQ	BYTE	>20
@@ -84,6 +80,9 @@ VDPWD	EQU	>8C00
 VDPWA	EQU	>8C02
 VDPST	EQU	>8802
 
+; User Defined Interrupt hook
+USRINT	EQU	>83C4
+
 
 ; XB entry points
 MOUSE0	stwp	R10
@@ -114,12 +113,35 @@ VBLP1	CLR	R12
 	LWPI	>AAAA
 	RT
 
+; Install User interrupt routine to update mouse data
+MOUSE1	stwp	R10
+	mov	R10,@WORKSV
+	lwpi	MWS
 
-MOUSE1	NOP
+	BL	@FINDCRU
+
+	LI	R0,MYINTR
+
+	; restore workspace with all the unmodified return pointers for CALL LINK
+	MOV	@WORKSV,@$+8	; this writes WP into next instruction, first param, as though it was literal
+	LWPI	>AAAA
 	RT
 
+; My User defined interrupt routine
+; System interupt routine calls with WS set to GPLWS
+; with BL, so preserve R11 and RT to return to console ROM.
+MYINTR	RT
 
-MCLR	nop
+; Clear user defined interrupt routine
+MCLR	stwp	R10
+	mov	R10,@WORKSV
+	lwpi	MWS
+
+	CLR	@USRINT
+
+	; restore workspace with all the unmodified return pointers for CALL LINK
+	MOV	@WORKSV,@$+8	; this writes WP into next instruction, first param, as though it was literal
+	LWPI	>AAAA
 	RT
 
 
@@ -278,9 +300,19 @@ STOREV	SWPB	R1
 	SWPB	R0
 	CLR	@MKEY
 	ANDI	R0,MBLEFT
-	JEQ	SKIPU
+	JEQ	RBUT
 	MOVB	@V255,@MKEY
-SKIPU	RT
+
+	; JUMP to VHOME,HHOME if right mouse button
+RBUT	CLR	R0
+	MOVB	@MOUBUF+2,R0
+	SWPB	R0
+	ANDI	R0,MBRIGHT
+	JEQ	UDONE
+	MOVB	@HHOME,@HPOS
+	MOVB	@VHOME,@VPOS
+
+UDONE	RT
 
 ; End of source
 	END
