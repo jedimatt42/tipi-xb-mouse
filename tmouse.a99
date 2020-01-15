@@ -121,6 +121,7 @@ MOUSE1	stwp	R10
 	BL	@FINDCRU
 
 	LI	R0,MYINTR
+	MOV	R0,@USRINT
 
 	; restore workspace with all the unmodified return pointers for CALL LINK
 	MOV	@WORKSV,@$+8	; this writes WP into next instruction, first param, as though it was literal
@@ -130,7 +131,13 @@ MOUSE1	stwp	R10
 ; My User defined interrupt routine
 ; System interupt routine calls with WS set to GPLWS
 ; with BL, so preserve R11 and RT to return to console ROM.
-MYINTR	RT
+MYINTR	lwpi	MWS
+
+	BL	@READM
+	BL	@UPDATE
+
+	LWPI	>83E0		; we know we are always called from that workspace
+	RT
 
 ; Clear user defined interrupt routine
 MCLR	stwp	R10
@@ -138,6 +145,9 @@ MCLR	stwp	R10
 	lwpi	MWS
 
 	CLR	@USRINT
+	CLR	@VPOS
+	MOVB	@VPOS,@MKEY
+	LIMI	0
 
 	; restore workspace with all the unmodified return pointers for CALL LINK
 	MOV	@WORKSV,@$+8	; this writes WP into next instruction, first param, as though it was literal
