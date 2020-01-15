@@ -289,9 +289,17 @@ SKIPBM	CLR	R2
 STOREV	SWPB	R1
 	MOVB	R1,@VPOS
 
+	; Warp to VHOME,HHOME if right mouse button
+	CLR	R0
+	MOVB	@MOUBUF+2,R0
+	SWPB	R0
+	ANDI	R0,MBRIGHT
+	JEQ	MOVSPR
+	MOVB	@HHOME,@HPOS
+	MOVB	@VHOME,@VPOS
 
 	; Set sprite location
-	LI	R0,SPRITES
+MOVSPR	LI	R0,SPRITES
 	LI	R1,>4000
 	SOC	R1,R0		; designate a write to vdp memory address
 	; Usually need interrupts off for VDP, but imperically, they are off already when 
@@ -310,17 +318,8 @@ STOREV	SWPB	R1
 	SWPB	R0
 	CLR	@MKEY
 	ANDI	R0,MBLEFT
-	JEQ	RBUT
-	MOVB	@V255,@MKEY
-
-	; JUMP to VHOME,HHOME if right mouse button
-RBUT	CLR	R0
-	MOVB	@MOUBUF+2,R0
-	SWPB	R0
-	ANDI	R0,MBRIGHT
 	JEQ	UDONE
-	MOVB	@HHOME,@HPOS
-	MOVB	@VHOME,@VPOS
+	MOVB	@V255,@MKEY
 
 UDONE	RT
 
