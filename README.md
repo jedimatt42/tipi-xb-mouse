@@ -4,6 +4,12 @@ TIPI Extended BASIC mouse driver compatible with Mechatronics Mouse interface
 
 [Mechatronics Documentation](http://ftp.whtech.com/datasheets%20and%20manuals/Hardware/Mechatronic/Mechatronic%20Mouse.pdf)
 
+## Binary
+
+Latest build can be found in github releases:
+
+[releases](https://github.com/jedimatt42/tipi-xb-mouse/releases)
+
 ## API
 
 CALL INIT::CALL LOAD("TIPI.TMOUSE/O")
