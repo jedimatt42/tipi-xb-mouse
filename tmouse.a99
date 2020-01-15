@@ -77,6 +77,13 @@ MBMID	EQU	>04
 GPLWS	EQU	>83E0
 GPLWSR1	EQU	>83E2
 
+; XB Sprite Attribute list
+SPRITES EQU	>80*6
+; VDP Write Data pointer
+VDPWD	EQU	>8C00
+VDPWA	EQU	>8C02
+
+
 
 ; XB entry points
 MOUSE0	stwp	R10
@@ -167,10 +174,100 @@ READM	MOV	@CRUBASE,R12	; enable tipi device
 	RT
 
 ; Update VPOS HPOS and MKEY based on data read from TIPI
-UPDATE	MOV	@MOUBUF,R0
+; MOUBUF [x-delta, y-delta, button-bits]
+; location is almost XB style.. 0,0 top left, 255,255 bottom right
+UPDATE	CLR	R0
+	; process the X value from TIPI
+	MOVB	@MOUBUF,R0
+	SRA	R0,8		; x in R0, needs to be used to modify HPOS, signed
+	CLR	R1
+	MOVB	@HPOS,R1
+	SWPB	R1		; old hpos in R1, this is always positive.. 
+	A	R0,R1		; new HPOS in R1
+
+	; fit it within the bounding box.
+	; check right-hand limit
+	CLR	R2
+	MOVB	@RMARG,R2
+	SWPB	R2
+	C	R1,R2
+	JLT	SKIPRM
+	; reset to right margin limit
+	CLR	R1
+	MOVB	@RMARG,R1
+	SWPB	R1
+	JMP	STOREH		; we were too big, so no need to check if we were too small
+
+	; check for left-hand limit
+SKIPRM	CLR	R2
+	MOVB	@LMARG,R2
+	SWPB	R2
+	C	R1,R2
+	JGT	STOREH
+	; reset to left limit
+	CLR	R1
+	MOVB	@LMARG,R1
+	SWPB	R1
+
+STOREH	SWPB	R1
+	MOVB	R1,@HPOS
+	
+	; apply vertical change
+	CLR	R0
+	MOVB	@MOUBUF+1,R0
+	SRA	R0,8		; delta y as signed interface
+	CLR	R1
+	MOVB	@VPOS,R1
+	SWPB	R1
+	A	R0,R1		; new VPOS in R1
+
+	; check bottom bound
+	CLR	R2
+	MOVB	@BMARG,R2
+	SWPB	R2
+	C	R1,R2
+	JLT	SKIPBM
+	; reset to bottom limit
+	CLR	R1
+	MOVB	@BMARG,R1
+	SWPB	R1
+	JMP	STOREV
+
+	; check top limit
+SKIPBM	CLR	R2
+	MOVB	@TMARG,R2
+	SWPB	R2
+	C	R1,R2
+	JGT	STOREV
+	; reset to top limit
+	CLR	R1
+	MOVB	@TMARG,R1
+	SWPB	R1
+
+STOREV	SWPB	R1
+	MOVB	R1,@VPOS
+
+
+	; Set sprite location
+	LI	R0,SPRITES
+	LI	R1,>4000
+	SOC	R1,R0		; designate a write to vdp memory address
+	; Usually need interrupts off for VDP, but imperically, they are off already when 
+	; CALL LINK is executing.
 	SWPB	R0
-	MOV	R0,@VPOS
-	MOVB	@MOUBUF+2,@MKEY
+	MOVB	R0,@VDPWA
+	SWPB	R0
+	MOVB	R0,@VDPWA
+	; NOP			; I don't believe I need the NOP cause some of it is a myth.
+	MOVB	@VPOS,@VDPWD	; write row for sprite #1
+	MOVB	@HPOS,@VDPWD	; write column for sprite #1
+
+	; update left mouse button
+	CLR	R0
+	MOVB	@MOUBUF+2,R0
+	SWPB	R0
+	CLR	@MKEY
+	ANDI	R0,MBLEFT
 	JEQ	SKIPU
 	MOVB	@V255,@MKEY
 SKIPU	RT
