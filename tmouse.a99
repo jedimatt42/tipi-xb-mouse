@@ -82,7 +82,7 @@ SPRITES EQU	>80*6
 ; VDP Write Data pointer
 VDPWD	EQU	>8C00
 VDPWA	EQU	>8C02
-
+VDPST	EQU	>8802
 
 
 ; XB entry points
@@ -93,13 +93,23 @@ MOUSE0	stwp	R10
 	; Now we are free to mouse around
 
 	MOV	@CRUBASE,@CRUBASE	; do we need to find the crubase?
-	JNE	SKIP1
+	JNE	VBLP1
 	BL	@FINDCRU
 
-SKIP1	BL	@READM
+	; Loop on status register until VBLANK
+VBLP1	CLR	R12
+	TB	2
+	JEQ	VBLP1			; wait until VBLANK
+	MOVB	@VDPST,R12		; read the status for this to work correctly
+
+	BL	@READM
 	BL	@UPDATE
 
-	; restore workspace with all the unmodified return pointers
+	MOVB	@MKEY,@MKEY
+	JEQ	VBLP1
+
+
+	; restore workspace with all the unmodified return pointers for CALL LINK
 	MOV	@WORKSV,@$+8	; this writes WP into next instruction, first param, as though it was literal
 	LWPI	>AAAA
 	RT
