@@ -44,6 +44,11 @@ RMARG	EQU	MAILBOX+6	; Right margin - default 255
 TMARG	EQU	MAILBOX+7	; Top margin - default 0
 BMARG	EQU	MAILBOX+8	; Bottom margin - default 192
 
+	; Initialize default values for the mailbox
+	AORG	MAILBOX
+VER10	BYTE	0,0,0,0,0,0,255,0,192
+	EVEN
+
 ; Message code for mouse request
 MOUREQ	BYTE	>20
 V255	BYTE	>FF
@@ -321,11 +326,6 @@ MOVSPR	LI	R0,SPRITES
 	MOVB	@V255,@MKEY
 
 UDONE	RT
-
-	; Initialize default values for the mailbox
-	AORG	MAILBOX
-VER10	BYTE	0,0,0,96,128,0,255,0,192
-	EVEN
 
 ; End of source
 	END
