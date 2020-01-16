@@ -31,7 +31,7 @@
 	def MOUSE0
 	def MOUSE1
 	def MCLR
-
+	def VER10
 
 MAILBOX	EQU	>2710
 VPOS	EQU	MAILBOX		; Vertical position of pointer
@@ -321,6 +321,11 @@ MOVSPR	LI	R0,SPRITES
 	MOVB	@V255,@MKEY
 
 UDONE	RT
+
+	; Initialize default values for the mailbox
+	AORG	MAILBOX
+VER10	BYTE	0,0,0,96,128,0,255,0,192
+	EVEN
 
 ; End of source
 	END
