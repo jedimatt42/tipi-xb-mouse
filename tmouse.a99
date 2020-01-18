@@ -31,43 +31,10 @@
 	def MOUSE0
 	def MOUSE1
 	def MCLR
-	def VER10
 
-MAILBOX	EQU	>2710
-VPOS	EQU	MAILBOX		; Vertical position of pointer
-HPOS	EQU	MAILBOX+1	; Horizontal position of pointer
-MKEY	EQU	MAILBOX+2	; 255 if mouse 1 pressed, 0 if not
-VHOME	EQU	MAILBOX+3	; Vertical home for pointer (right mouse button action)
-HHOME	EQU	MAILBOX+4	; Horizontal home for pointer (right mouse button action)
-LMARG	EQU	MAILBOX+5	; Left margin - default 0
-RMARG	EQU	MAILBOX+6	; Right margin - default 255
-TMARG	EQU	MAILBOX+7	; Top margin - default 0
-BMARG	EQU	MAILBOX+8	; Bottom margin - default 192
-
-	; Initialize default values for the mailbox
-	AORG	MAILBOX
-VER10	BYTE	0,0,0,0,0,0,255,0,192
-	EVEN
-
-; Message code for mouse request
-MOUREQ	BYTE	>20
-V255	BYTE	>FF
-; receive buffer
-MOUBUF  BSS	3
-	EVEN
-
-SENDMSG	EQU	>4012
+; TIPI ROM routines table
 RECVMSG	EQU	>4010
-
-; once discovered, will hold crubase to reduce lookup cost
-CRUBASE	DATA	>0000
-
-MWS	BSS	>20		; MOUSE-WORKSPACE
-MWSR2	EQU	MWS+4
-MWSR3	EQU	MWS+6
-MWSR4	EQU	MWS+8
-
-WORKSV	DATA	0
+SENDMSG	EQU	>4012
 
 ; TIPI mouse button bits
 MBLEFT	EQU	>01
@@ -75,7 +42,6 @@ MBRIGHT	EQU	>02
 MBMID	EQU	>04
 
 GPLWS	EQU	>83E0
-GPLWSR1	EQU	>83E2
 
 ; XB Sprite Attribute list
 SPRITES EQU	>80*6
@@ -86,7 +52,6 @@ VDPST	EQU	>8802
 
 ; User Defined Interrupt hook
 USRINT	EQU	>83C4
-
 
 ; XB entry points
 MOUSE0	stwp	R10
@@ -140,7 +105,7 @@ MYINTR	lwpi	MWS
 	BL	@READM
 	BL	@UPDATE
 
-	LWPI	>83E0		; we know we are always called from that workspace
+	LWPI	GPLWS		; we know we are always called from that workspace
 	RT
 
 ; Clear user defined interrupt routine
@@ -320,12 +285,43 @@ MOVSPR	LI	R0,SPRITES
 	CLR	R0
 	MOVB	@MOUBUF+2,R0
 	SWPB	R0
-	CLR	@MKEY
+	SETO	R1
+	SZCB	R1,@MKEY
 	ANDI	R0,MBLEFT
 	JEQ	UDONE
 	MOVB	@V255,@MKEY
 
 UDONE	RT
+
+; **** all the data ****
+
+; Message code for mouse request
+MOUREQ	BYTE	>20
+V255	BYTE	>FF
+; receive buffer
+MOUBUF  BSS	3
+	EVEN
+
+; once discovered, will hold crubase to reduce lookup cost
+CRUBASE	DATA	>0000
+
+MWS	BSS	>20		; MOUSE-WORKSPACE
+
+WORKSV	DATA	0		; place to stash caller workspace pointer
+
+
+; Initialize default values for the mailbox
+MAILBOX	EQU	>2710
+	AORG	MAILBOX
+VPOS	BYTE	0		; Vertical position of pointer
+HPOS	BYTE	0		; Horizontal position of pointer
+MKEY	BYTE	0		; 255 if mouse 1 pressed, 0 if not
+VHOME	BYTE	0		; Vertical home for pointer (right mouse button action)
+HHOME	BYTE	0		; Horizontal home for pointer (right mouse button action)
+LMARG	BYTE	0		; Left margin - default 0
+RMARG	BYTE	255		; Right margin - default 255
+TMARG	BYTE	0		; Top margin - default 0
+BMARG	BYTE	192		; Bottom margin - default 192
 
 ; End of source
 	END
