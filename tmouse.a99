@@ -31,6 +31,7 @@
 	def MOUSE0
 	def MOUSE1
 	def MCLR
+	def VER10
 
 ; TIPI ROM routines table
 RECVMSG	EQU	>4010
@@ -307,8 +308,9 @@ CRUBASE	DATA	>0000
 
 MWS	BSS	>20		; MOUSE-WORKSPACE
 
-WORKSV	DATA	0		; place to stash caller workspace pointer
+WORKSV	DATA	>0000		; place to stash caller workspace pointer
 
+VER10	DATA	>FFFF
 
 ; Initialize default values for the mailbox
 MAILBOX	EQU	>2710
