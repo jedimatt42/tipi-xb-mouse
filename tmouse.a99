@@ -174,10 +174,9 @@ READM	MOV	@CRUBASE,R12	; enable tipi device
 	MOV	@SENDMSG,R4
 	BL	*R4
 
-	CLR	R0		; receive mouse data back 
 	LI	R1,MOUBUF	; set buffer location
 	MOV	@RECVMSG,R4
-	BL	*R4
+	BL	*R4		; receive mouse data back
 
 	SBZ	0		; disable tipi device
 	MOV	R15,R11
@@ -185,7 +184,6 @@ READM	MOV	@CRUBASE,R12	; enable tipi device
 ; Update VPOS HPOS and MKEY based on data read from TIPI
 ; MOUBUF [x-delta, y-delta, button-bits]
 ; location is almost XB style.. 0,255 top left, 255,192 bottom right
-	CLR	R0
 	; process the X value from TIPI
 	MOVB	@MOUBUF,R0
 	SRA	R0,8		; x in R0, needs to be used to modify HPOS, signed
@@ -246,13 +244,20 @@ STOREV	SWPB	R1
 	MOVB	R1,@VPOS
 
 	; Warp to VHOME,HHOME if right mouse button
-	CLR	R0
 	MOVB	@MOUBUF+2,R0
-	SWPB	R0
+	SRL	R0,8
+	MOV	R0,R1
 	ANDI	R0,MBRIGHT
-	JEQ	MOVSPR
+	JEQ	TLEFT
 	MOVB	@HHOME,@HPOS
 	MOVB	@VHOME,@VPOS
+
+	; update left mouse button
+TLEFT	ANDI	R1,MBLEFT
+	JEQ	CLRLB
+	MOVB	@V255,@MKEY
+	JMP	MOVSPR
+CLRLB	MOVB	R1,@MKEY	; make sure mkey is reset if not pressed.
 
 	; Set sprite location
 MOVSPR	LI	R0,SPRITES
@@ -265,17 +270,7 @@ MOVSPR	LI	R0,SPRITES
 	; NOP			; I don't believe I need the NOP cause some of it is a myth.
 	MOVB	@VPOS,@VDPWD	; write row for sprite #1
 	MOVB	@HPOS,@VDPWD	; write column for sprite #1
-
-	; update left mouse button
-	MOVB	@MOUBUF+2,R0
-	SRL	R0,8
-	SETO	R1
-	SZCB	R1,@MKEY
-	ANDI	R0,MBLEFT
-	JEQ	UDONE
-	MOVB	@V255,@MKEY
-
-UDONE	RT
+	RT
 
 ; **** all the data ****
 
