@@ -55,9 +55,9 @@ VDPST	EQU	>8802
 USRINT	EQU	>83C4
 
 ; XB entry points
-MOUSE0	stwp	R10
-	mov	R10,@WORKSV
-	lwpi	MWS
+MOUSE0	STWP	R10
+	MOV	R10,@WORKSV
+	LWPI	MWS
 
 	; Now we are free to mouse around
 
@@ -83,9 +83,9 @@ VBLP1	CLR	R12
 	RT
 
 ; Install User interrupt routine to update mouse data
-MOUSE1	stwp	R10
-	mov	R10,@WORKSV
-	lwpi	MWS
+MOUSE1	STWP	R10
+	MOV	R10,@WORKSV
+	LWPI	MWS
 
 	BL	@FINDCRU
 
@@ -100,7 +100,7 @@ MOUSE1	stwp	R10
 ; My User defined interrupt routine
 ; System interupt routine calls with WS set to GPLWS
 ; with BL, so preserve R11 and RT to return to console ROM.
-MYINTR	lwpi	MWS
+MYINTR	LWPI	MWS
 
 	BL	@READM
 
@@ -108,9 +108,9 @@ MYINTR	lwpi	MWS
 	RT
 
 ; Clear user defined interrupt routine
-MCLR	stwp	R10
-	mov	R10,@WORKSV
-	lwpi	MWS
+MCLR	STWP	R10
+	MOV	R10,@WORKSV
+	LWPI	MWS
 
 	CLR	@USRINT
 	CLR	@VPOS
