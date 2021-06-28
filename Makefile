@@ -10,7 +10,7 @@ clean:
 	rm -f *.lst
 
 %.obj: %.a99
-	$(XAS) -R --list-file $(patsubst %.obj,%.lst,$@) -o $@ $<
+	$(XAS) -R -L $(patsubst %.obj,%.lst,$@) -o $@ $<
 
 %.o: %.obj
 	$(XDM) --to-fiad $< -t -f DIS/FIX80 -o $@
