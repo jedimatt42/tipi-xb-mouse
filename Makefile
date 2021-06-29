@@ -2,7 +2,7 @@
 XAS=xas99.py
 XDM=xdm99.py
 
-all: tmouse.o
+all: tmouse.o tmororg.o
 
 clean:
 	rm -f *.obj
