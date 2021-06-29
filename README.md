@@ -18,6 +18,9 @@ Latest build can be found in github releases:
 
 For Mechatronics compatible driver tmouse.o, `MBOX=10000`
 
+`CALL LINK("MBASE", MBOX)`
+- Only in the RORG version. Look up base address for driver peek/load mailbox addresses.
+
 
 `CALL LINK("MOUSE0")`
 - Will block until mouse button 1 is pressed. A subsequent `CALL PEEK(MBOX,VPOS,HPOS)` will read location data. MKEY will be 255.
